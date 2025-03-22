@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar & Clock Widget</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #ffffff;
+            color: #37352f;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .digital-clock {
+            text-align: center;
+            padding: 20px;
+            background-color: #f7f6f3;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .time {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2eaadc;
+        }
+
+        .date {
+            font-size: 18px;
+            color: #37352f;
+            margin-top: 10px;
+        }
+
+        .calendar {
+            width: 100%;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #2eaadc;
+            padding: 5px 10px;
+        }
+
+        .calendar-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+
+        .calendar-grid div {
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .weekday {
+            font-weight: bold;
+            color: #2eaadc;
+        }
+
+        .day {
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .day:hover {
+            background-color: #f7f6f3;
+        }
+
+        .today {
+            background-color: #2eaadc;
+            color: white;
+        }
+
+        .other-month {
+            color: #d3d3d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="digital-clock">
+            <div class="time" id="time">00:00:00</div>
+            <div class="date" id="date">Monday, January 1, 2024</div>
+        </div>
+
+        <div class="calendar">
+            <div class="calendar-header">
+                <button id="prevMonth">&lt;</button>
+                <h2 id="monthYear">January 2024</h2>
+                <button id="nextMonth">&gt;</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const timeElement = document.getElementById('time');
+            const dateElement = document.getElementById('date');
+
+            // Update time
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            timeElement.textContent = `${hours}:${minutes}:${seconds}`;
+
+            // Update date
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateElement.textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Initialize calendar variables
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+
+        // Calendar functions
+        function generateCalendar(month, year) {
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startingDay = firstDay.getDay();
+            const monthLength = lastDay.getDate();
+
+            const monthYearText = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            document.getElementById('monthYear').textContent = monthYearText;
+
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            // Add weekday headers
+            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            weekdays.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'weekday';
+                dayElement.textContent = day;
+                calendarGrid.appendChild(dayElement);
+            });
+
+            // Add padding for first week
+            for (let i = 0; i < startingDay; i++) {
+                const paddingElement = document.createElement('div');
+                paddingElement.className = 'day other-month';
+                const prevMonthLastDay = new Date(year, month, 0).getDate();
+                paddingElement.textContent = prevMonthLastDay - startingDay + i + 1;
+                calendarGrid.appendChild(paddingElement);
+            }
+
+            // Add days
+            const today = new Date();
+            for (let day = 1; day <= monthLength; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'day';
+                dayElement.textContent = day;
+
+                if (year === today.getFullYear() &&
+                    month === today.getMonth() &&
+                    day === today.getDate()) {
+                    dayElement.classList.add('today');
+                }
+
+                calendarGrid.appendChild(dayElement);
+            }
+
+            // Add padding for last week
+            const remainingDays = 42 - (startingDay + monthLength); // 42 is 6 rows × 7 days
+            for (let i = 1; i <= remainingDays; i++) {
+                const paddingElement = document.createElement('div');
+                paddingElement.className = 'day other-month';
+                paddingElement.textContent = i;
+                calendarGrid.appendChild(paddingElement);
+            }
+        }
+
+        // Event listeners for previous and next month buttons
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            generateCalendar(currentMonth, currentYear);
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            generateCalendar(currentMonth, currentYear);
+        });
+
+        // Initialize clock and calendar
+        setInterval(updateClock, 1000);
+        updateClock();
+        generateCalendar(currentMonth, currentYear);
+    </script>
+</body>
+</html>
